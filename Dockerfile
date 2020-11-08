@@ -6,7 +6,7 @@
 #    By: ytomiyos <ytomiyos@student.42tokyo.jp>     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/08/12 21:20:41 by ytomiyos          #+#    #+#              #
-#    Updated: 2020/09/21 15:19:17 by ytomiyos         ###   ########.fr        #
+#    Updated: 2020/11/07 14:38:11 by ytomiyos         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -40,8 +40,20 @@ RUN		service mysql start &&\
 		mysql -e "CREATE USER user@localhost IDENTIFIED BY 'pass'" &&\
 		mysql -e "GRANT ALL PRIVILEGES ON wp_database.* TO user@localhost"
 
+WORKDIR /etc/nginx/
+RUN		openssl req -newkey rsa:4096 \
+		-x509 -sha256 -days 365 -nodes \
+		-subj '/C=JP/ST=Tokyo/L=Minato/O=42tokyo/CN=42' \
+		-out example.crt \
+		-keyout example.key
+
+
 COPY	/srcs/default.conf /etc/nginx/sites-available/default
 COPY	/srcs/wp-config.php /var/www/html/wordpress/wp-config.php
 COPY	/srcs/nginx.conf /etc/nginx/nginx.conf
 
-# CMD		nginx && service mysql start && /etc/init.d/php7.3-fpm start
+ENV		AUTOINDEX=on
+
+CMD		sed -i "s/autoindex on/autoindex $AUTOINDEX/" /etc/nginx/sites-available/default &&\
+		nginx && service mysql start && /etc/init.d/php7.3-fpm start &&\
+		tail -f /dev/null
